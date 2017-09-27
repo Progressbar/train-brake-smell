@@ -19,11 +19,11 @@ const throttledUdpSend = throttle(udpClient.send.bind(udpClient), 80)
 //     })
 // })
 
-function clearStrip(stripLength) {
-    const packet = createOpcPacket(STRIP_LENGTH, clearPixels(STRIP_LENGTH))
-    throttledUdpSend(packet, 0, packet.length, 2342, 'portal3.bar')
+function clearStrip(send, stripLength) {
+    const packet = createOpcPacket(stripLength, clearPixels(stripLength))
+    send(packet, 0, packet.length, 2342, 'portal3.bar')
 }
 
-clearStrip(STRIP_LENGTH);
+clearStrip(throttledUdpSend, STRIP_LENGTH);
 
 
