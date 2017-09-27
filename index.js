@@ -1,6 +1,6 @@
 const { throttle } = require('lodash')
 const { createSocket } = require('dgram')
-const createOpcPacket = require('./utils/create-opc-packet')
+const { createOpcPacket } = require('opc-via-udp')
 const { clearPixels, fillPixelsWithSingleColor } = require('./visual/visual-utils')
 const { getVuMicPacketStream, virtualMeter, meter } = require('./visual/vu')
 
@@ -19,11 +19,13 @@ const throttledUdpSend = throttle(udpClient.send.bind(udpClient), 80)
 //     })
 // })
 
-function clearStrip(send, stripLength) {
-    const packet = createOpcPacket(stripLength, clearPixels(stripLength))
-    send(packet, 0, packet.length, 2342, 'portal3.bar')
-}
+// function clearStrip(send, stripLength) {
+//     // const packet = createOpcPacket(stripLength, clearPixels(stripLength))
+//     const packet = createOpcPacket(stripLength, fillPixelsWithSingleColor(stripLength))
+//     send(packet, 0, packet.length, 2342, 'portal3.bar')
+// }
+// clearStrip(throttledUdpSend, STRIP_LENGTH);
 
-clearStrip(throttledUdpSend, STRIP_LENGTH);
-
+const packet = createOpcPacket(STRIP_LENGTH, fillPixelsWithSingleColor(STRIP_LENGTH))
+throttledUdpSend(packet, 0, packet.length, 2342, 'portal3.bar')
 

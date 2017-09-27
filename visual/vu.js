@@ -1,4 +1,4 @@
-const createOpcPacket = require('../utils/create-opc-packet')
+const { createOpcPacket } = require('opc-via-udp')
 const { makeRgbGradientArray } = require('./visual-utils')
 const LineIn = require('line-in')
 const VUmeter = require('vu-meter')
@@ -37,10 +37,7 @@ function virtualMeter(stripLength, rawVolume) {
 
     pixels.fill([0, 0, 0], neededStripLength, stripLength)
 
-    return [
-        ...pixels,
-        ...pixels.reverse()
-    ]
+    return [ ...pixels, ...pixels.reverse() ]
 }
 
 function toOpcPacket(stripLength, meter) {

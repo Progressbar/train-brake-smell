@@ -9,6 +9,7 @@
   "dependencies": {
     "line-in": "^0.1.2",
     "lodash": "^4.17.4",
+    "opc-via-udp": "^1.0.0",
     "through2": "^2.0.3",
     "tinycolor2": "^1.4.1",
     "tinygradient": "^0.3.1",
