@@ -1,0 +1,18 @@
+{
+  "name": "train-brake-smell",
+  "version": "0.1.0",
+  "description": "open pixel control opc udp esp8266",
+  "main": "index.js",
+  "repository": "git@github.com:olso/train-brake-smell.git",
+  "author": "olso <olsansky.martin@gmail.com>",
+  "license": "MIT",
+  "dependencies": {
+    "line-in": "^0.1.2",
+    "lodash": "^4.17.4",
+    "through2": "^2.0.3",
+    "tinycolor2": "^1.4.1",
+    "tinygradient": "^0.3.1",
+    "vu-meter": "^0.1.0",
+    "ws": "^3.2.0"
+  }
+}
