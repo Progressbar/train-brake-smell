@@ -41,7 +41,7 @@ function virtualMeter(stripLength, rawVolume) {
 }
 
 function toOpcPacket(stripLength, meter) {
-    return through2.obj((data, enc, cb) => {
+    return through2.obj({ objectMode: true }, (data, enc, cb) => {
         const leftChannel = data[0]
         const micStrength = (Math.max(leftChannel + 60, 0) / 60) * 100
         const pixels = meter(stripLength, micStrength)

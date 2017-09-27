@@ -5,27 +5,22 @@ const { clearPixels, fillPixelsWithSingleColor } = require('./visual/visual-util
 const { getVuMicPacketStream, virtualMeter, meter } = require('./visual/vu')
 
 const STRIP_LENGTH = 120
-const STRIP_LENGTH_V = STRIP_LENGTH/2
 
 const udpClient = createSocket('udp4')
-const throttledUdpSend = throttle(udpClient.send.bind(udpClient), 80)
+const throttledUdpSend = throttle(udpClient.send.bind(udpClient))
 
-// const vuMicPacketStream = getVuMicPacketStream(STRIP_LENGTH_V, virtualMeter)
-
-// const vuMicPacketStream = getVuMicPacketStream(STRIP_LENGTH, meter)
-// vuMicPacketStream.on('data', (packet) => {
-//     throttledUdpSend(packet, 0, packet.length, 2342, 'portal3.bar', (error) => {
-//         console.error(error)
-//     })
-// })
+// const vuMicPacketStream = getVuMicPacketStream(STRIP_LENGTH, virtualMeter)
+const vuMicPacketStream = getVuMicPacketStream(STRIP_LENGTH, meter)
+vuMicPacketStream.on('data', (packet) => {
+    throttledUdpSend(packet, 0, packet.length, 2342, 'portal3.bar')
+})
 
 // function clearStrip(send, stripLength) {
-//     // const packet = createOpcPacket(stripLength, clearPixels(stripLength))
-//     const packet = createOpcPacket(stripLength, fillPixelsWithSingleColor(stripLength))
+//     const packet = createOpcPacket(stripLength, clearPixels(stripLength))
 //     send(packet, 0, packet.length, 2342, 'portal3.bar')
 // }
 // clearStrip(throttledUdpSend, STRIP_LENGTH);
 
-const packet = createOpcPacket(STRIP_LENGTH, fillPixelsWithSingleColor(STRIP_LENGTH))
-throttledUdpSend(packet, 0, packet.length, 2342, 'portal3.bar')
+// const packet = createOpcPacket(STRIP_LENGTH, fillPixelsWithSingleColor(STRIP_LENGTH))
+// throttledUdpSend(packet, 0, packet.length, 2342, 'portal3.bar')
 
