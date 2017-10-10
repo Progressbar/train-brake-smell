@@ -1,0 +1,26 @@
+<html>
+    <head>
+    </head>
+    <body>
+        <script>
+            let wsc = new WebSocket("ws://192.168.223.149:8080")
+            let clientX, clientY;
+            document.body.addEventListener('touchmove', function(e) {
+                clientX = e.touches[0].clientX;
+                clientY = e.touches[0].clientY;
+                let pos = Math.round((clientY/document.body.clientHeight)*100)
+
+                if (pos < 0) {
+                    pos = 0
+                }
+
+                if (pos > 100) {
+                    pos = 100
+                }
+
+                console.log('pos', pos, clientX, clientY)
+                wsc.send(pos)
+            }, false);
+        </script>
+    </body>
+</html>

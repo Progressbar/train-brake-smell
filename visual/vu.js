@@ -1,8 +1,13 @@
+const { flattenDeep } = require('lodash')
 const { createOpcPacket } = require('opc-via-udp')
-const { makeRgbGradientArray } = require('./visual-utils')
-const LineIn = require('line-in')
+const { makeRgbGradientArray, fillPixelsWithSingleColor, convertHexColorToRgbArray, clearPixels, randomRgbColor } = require('./visual-utils')
 const VUmeter = require('vu-meter')
 const through2 = require('through2')
+const mic = require('mic')
+const _ = require('lodash')
+const bezier = require('cubic-bezier')
+const http = require('http')
+const fetch = require('node-fetch')
 
 function getVuBgPixels(stripLength) {
     const startColor = '#00FF00'
@@ -13,6 +18,14 @@ function getVuBgPixels(stripLength) {
 
 function normalizeVolume(volume) {
     return volume > 100 ? 100 : Math.floor(volume)
+}
+
+function calcMicStrength(micData) {
+    const magicNumber = 50; // 60
+    const strength = (Math.max(micData + magicNumber, 0) / magicNumber) * 100;
+
+    // return strength < 3 ? 0 : strength;
+    return strength;
 }
 
 function calcNeededStripLength(stripLength, volume) {
@@ -40,26 +53,106 @@ function virtualMeter(stripLength, rawVolume) {
     return [ ...pixels, ...pixels.reverse() ]
 }
 
-function toOpcPacket(stripLength, meter) {
+function getMicVuOpcPipe(stripLength, meter) {
     return through2.obj({ objectMode: true }, (data, enc, cb) => {
-        const leftChannel = data[0]
-        const micStrength = (Math.max(leftChannel + 60, 0) / 60) * 100
+    
+        const micStrength = calcMicStrength(data[0])
         const pixels = meter(stripLength, micStrength)
 
-        cb(null, createOpcPacket(stripLength, pixels))
-    });
+        cb(null, pixels)
+    })
 }
 
 function getVuMicPacketStream(stripLength, meter) {
-    const lineIn = new LineIn()
     const vuMeter = new VUmeter()
-    const opcPipe = toOpcPacket(stripLength, meter)
+    const micVuOpcPipe = getMicVuOpcPipe(stripLength, meter)
+    const micInstance = mic({
+        debug: false,
+        rate: '32000',
+        bitwidth: '16',
+        buffer: 300,
+        device: 'hw:1,0',
+    })
+    const micStream = micInstance.getAudioStream()
 
-    return lineIn.pipe(vuMeter).pipe(opcPipe)
+    micInstance.start()
+
+    return micStream.pipe(vuMeter).pipe(micVuOpcPipe)
 }
+
+function movePixelByTouch(stripLength, screenPos, lastPixelPos) {
+    const pixels = fillPixelsWithSingleColor(stripLength, [0, 0, 0])
+}
+
+function easeIn(stripLength, client) {
+    // // const easeIn = bezier(0.42, 0, 1.0, 1.0, 1000)
+    // // const easeIn = bezier(0.455, 0, 0.515, 0.955)
+    // const easeIn = bezier(0, 0, 1, 1, 1000)
+    // for (t = 0; t <= 1; t += 0.001) {
+    //     const pixels = clearPixels(stripLength)
+    //     const timing = Math.round(easeIn(t) * 100)
+    //     const position = (stripLength / 100) * timing
+    //     console.log(position)
+    //     pixels[position] = [255, 255, 0];
+    //     const packet = createOpcPacket(stripLength, flattenDeep(pixels))
+    //     client.send(packet, 0, packet.length, 2342, 'portal3.bar')
+    // }
+}
+
+function travellingDots(stripLength, client) {
+    stripLength = stripLength/2
+
+    const bg = fillPixelsWithSingleColor(stripLength, [0, 0, 0])
+
+    function tick(bounceHeight, now) {
+        let h = 1000 //3500 // x vertex, half of total bounce duration
+        let k = bounceHeight //160 // y vertex, total bounce height
+        let a = 4 * k / Math.pow(h * 2, 2) // cached coefficient
+
+        let ypos = a * Math.pow(((now + h) % (h * 2) - h), 2)
+
+        return ypos
+    }
+
+    const postMsgBar = http.request({
+        method: 'POST',
+        hostname: 'msg.bar',
+        path: '/'
+    })
+
+    let color = randomRgbColor()
+
+    setInterval(() => {
+        const pos = Math.round(tick(stripLength, Date.now()))
+        const pixels = _.cloneDeep(bg)
+
+        if ((pos + 1) >= stripLength) {
+            // console.log('Color change!')
+            color = randomRgbColor()
+        }
+
+        pixels[pos] = color
+        
+        for (let i = 1; i <= 15; i +=1) {
+            pixels[pos + i] = color
+        }
+
+        const packet = createOpcPacket(stripLength, flattenDeep([...pixels, ...pixels.reverse()]))
+        // const packet = createOpcPacket(stripLength, flattenDeep(pixels))
+        client.send(packet, 0, packet.length, 2342, 'portal3.bar')
+        // console.log(pos)
+    }, 8)
+}
+
+// function blowBall(stripLength, ballPos) {
+// }
 
 module.exports = {
     meter,
     virtualMeter,
-    getVuMicPacketStream
+    // knightRider,
+    getVuMicPacketStream,
+    travellingDots,
+    movePixelByTouch,
+    easeIn
 }

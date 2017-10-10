@@ -2,23 +2,21 @@ const tinycolor = require('tinycolor2')
 const tinygradient = require('tinygradient')
 
 function toRgbArray(rgbObject) {
-    return [
-        rgbObject.r,
-        rgbObject.g,
-        rgbObject.b
-    ]
+    return [ rgbObject.r, rgbObject.g, rgbObject.b ]
 }
 
 function randomRgbColor() {
-    const color = tinycolor.random().toRgb()
-
-    return toRgbArray(color)
+    return toRgbArray(tinycolor.random().toRgb())
 }
 
 function makeRgbGradientArray(startColor, endColor, steps) {
     const colors = tinygradient([startColor, endColor]).rgb(steps)
 
     return colors.map(color => toRgbArray(color.toRgb()))
+}
+
+function convertHexColorToRgbArray(color) {
+    return toRgbArray(tinycolor(color).toRgb())
 }
 
 function fillPixelsWithSingleColor(stripLength = 1, color = randomRgbColor()) {
@@ -31,6 +29,9 @@ function clearPixels(stripLength) {
 
 module.exports = {
     clearPixels,
+    toRgbArray,
+    convertHexColorToRgbArray,
     fillPixelsWithSingleColor,
-    makeRgbGradientArray
+    makeRgbGradientArray,
+    randomRgbColor,
 }

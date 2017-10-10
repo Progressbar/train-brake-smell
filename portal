@@ -1,0 +1,25 @@
+#!/usr/bin/env node
+
+const { flattenDeep } = require('lodash')
+const { createSocket } = require('dgram')
+const program = require('commander')
+const config = require('./config.js')
+const { createOpcPacket } = require('opc-via-udp')
+const { clearPixels } = require('./visual/visual-utils')
+
+const udpClient = createSocket('udp4')
+
+function sendPixels(portalConfig, pixels) {
+	const packet = createOpcPacket(portalConfig.LENGTH, flattenDeep(pixels))
+	udpClient.send(packet, 0, packet.length, portalConfig.PORT, portalConfig.HOST)
+}
+
+program
+	.version('0.0.1')
+	.command('clearportal <portalName>')
+	.action((portalName) => {
+		const portalConfig = config.portals[portalName]
+		sendPixels(portalConfig, clearPixels(portalConfig.LENGTH))
+	})
+
+program.parse(process.argv)
