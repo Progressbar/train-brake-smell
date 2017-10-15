@@ -1,18 +1,23 @@
-const { createSocket } = require('dgram')
-const { getSendPixels } = require('../utils')
+const { flatten } = require('lodash')
+const { getSendPixels } = require('opc-via-udp')
 const { randomRgbColor } = require('../visual/visual-utils')
 const WebSocketServer = require('ws').Server
 const portalConfig = require('../config').portals.portal3bar
 
-const sendPixels = getSendPixels(createSocket('udp4'), portalConfig)
-const { LENGTH } = portalConfig
-const SV_TICK_RATE = 20
+const TRACK_LENGTH = portalConfig.LENGTH
+
+const sendPixels = getSendPixels({
+    port: portalConfig.PORT,
+    length: portalConfig.LENGTH,
+    host: portalConfig.HOST
+})
+
 const DANGERS = [
     {
         start: 90,
         length: 20,
         triggerSpeed: 7,
-        color: [255, 255, 0],
+        color: [255, 0, 0],
     },
     {
         start: 190,
@@ -30,10 +35,10 @@ class Car {
         this.id = id
         this.color = color
         this.position = 0
-        this.acceleration = 1.1
+        this.acceleration = 1.2
         this.speed = 0
         this.speedDecay = 0.98
-        this.maxSpeed = 10
+        this.maxSpeed = 20
     }
 
     isMoving() {
@@ -47,7 +52,7 @@ class Car {
     updatePosition() {
         this.position += this.speed
 
-        if (this.position > LENGTH) {
+        if (this.position > TRACK_LENGTH) {
             this.position = 0
         }
 
@@ -55,6 +60,8 @@ class Car {
     }
 
     shouldBeKicked() {
+        return false
+
         let should = false
 
         DANGERS.forEach((danger) => {
@@ -139,42 +146,41 @@ function drawDangers(pixels) {
 }
 
 function getPixels() {
-    let pixels = new Array(LENGTH).fill([0, 0, 0])
+    let pixels = new Array(TRACK_LENGTH).fill([0, 0, 0])
 
     pixels = drawDangers(pixels)
 
     cars.forEach((car) => {
-        const position = car.getPosition()
-        pixels[position] = car.color
+        const pos = car.getPosition()
+
+        for (let i = 0; i < 15; i++) {
+            pixels[pos + i] = car.color
+        }
+
+        // pixels[pos] = car.color
     })
 
     return pixels
 }
 
-/**
- * game is running @ SV_TICK_RATE
- * meaning game can update+output state that many times
- *
- */
 function updateGame() {
-    cars.forEach((car) => {
-        step(car)
-        // console.log(car)
-    })
+    cars.forEach(car => step(car))
 }
 
+const SV_TICK_RATE = 10
 setInterval(() => {
     updateGame()
-    sendPixels(getPixels())
+    sendPixels(flatten(getPixels()))
 }, SV_TICK_RATE)
 
 const wss = new WebSocketServer({ port: 1337 })
 wss.on('connection', (ws) => {
-    addCar(ws._ultron.id, randomRgbColor())
+    const id = ws._ultron.id
+
+    addCar(id, randomRgbColor())
 
     ws.on('message', () => {
-        const car = getCar(ws._ultron.id)
-        car.accelerate()
+        getCar(id).accelerate()
     })
 })
 // wss.on('close', (ws) => {

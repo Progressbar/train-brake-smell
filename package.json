@@ -13,7 +13,7 @@
     "lodash": "^4.17.4",
     "mic": "git+https://github.com/lorenzoromagnoli/mic.git",
     "node-fetch": "^1.7.3",
-    "opc-via-udp": "^1.0.5",
+    "opc-via-udp": "^1.0.6",
     "redux": "^3.7.2",
     "through2": "^2.0.3",
     "tinycolor2": "^1.4.1",
