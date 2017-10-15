@@ -1,10 +1,11 @@
-const { flatten } = require('lodash')
+const { flatten, isFunction } = require('lodash')
 const { getSendPixels } = require('opc-via-udp')
 const { randomRgbColor } = require('../visual/visual-utils')
 const WebSocketServer = require('ws').Server
 const portalConfig = require('../config').portals.portal3bar
 
 const TRACK_LENGTH = portalConfig.LENGTH
+const IS_PLAYING_TIMEOUT = 5000
 
 const sendPixels = getSendPixels({
     port: portalConfig.PORT,
@@ -26,7 +27,7 @@ const DANGERS = [
         length: 20,
     }
 ]
-const cars = []
+let cars = []
 
 class Car {
     constructor(props) {
@@ -39,7 +40,9 @@ class Car {
         this.acceleration = 1.2
         this.speed = 0
         this.speedDecay = 0.98
+        this.isBeingKilled = false
         this.maxSpeed = 8
+        this.lastReceivedActionAt = Date.now()
     }
 
     isMoving() {
@@ -79,11 +82,40 @@ class Car {
         this.health -= 1
     }
 
+    killCar() {
+        if (this.isBeingKilled) {
+            return
+        }
+
+        this.isBeingKilled = true
+
+        const stop = setInterval(() => {
+            this.takeHealth()
+
+            if (this.health < 0) {
+                if (isFunction(stop)) {
+                    stop()
+                    console.log('Killed car')
+                }
+            }
+        }, 100)
+    }
+
     isDead() {
         return this.health <= 0
     }
 
+    receivedAction() {
+        this.lastReceivedActionAt = Date.now()
+    }
+
+    isPlaying() {
+        return (Date.now() - this.lastReceivedActionAt) < IS_PLAYING_TIMEOUT
+    }
+
     accelerate() {
+        this.receivedAction()
+
         if (this.speed > this.maxSpeed) {
             return this
         }
@@ -121,11 +153,7 @@ function addCar(id, color) {
 }
 
 function removeCar(id) {
-    const carIndex = cars.findIndex(car => car.id === id)
-
-    if (carIndex) {
-        cars.splice(carIndex, 1)
-    }
+    cars = cars.filter(car => car.id !== id)
 }
 
 function step(car) {
@@ -144,6 +172,10 @@ function step(car) {
 
     if (car.isDead()) {
         removeCar(car.id)
+    }
+
+    if (!car.isPlaying()) {
+        car.killCar()
     }
 }
 
@@ -175,6 +207,7 @@ function getPixels() {
 
 function updateGame() {
     cars.forEach(car => step(car))
+    console.log(cars.length)
 }
 
 const SV_TICK_RATE = 10
@@ -197,6 +230,3 @@ wss.on('connection', (ws) => {
         }
     })
 })
-// wss.on('close', (ws) => {
-//     removeCar(ws._ultron.id)
-// })
