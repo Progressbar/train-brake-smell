@@ -207,7 +207,7 @@ function getPixels() {
 
 function updateGame() {
     cars.forEach(car => step(car))
-    console.log(cars.length)
+    // console.log(cars.length)
 }
 
 const SV_TICK_RATE = 10
