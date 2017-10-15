@@ -34,11 +34,12 @@ class Car {
 
         this.id = id
         this.color = color
+        this.health = 15
         this.position = 0
         this.acceleration = 1.2
         this.speed = 0
         this.speedDecay = 0.98
-        this.maxSpeed = 20
+        this.maxSpeed = 8
     }
 
     isMoving() {
@@ -60,8 +61,6 @@ class Car {
     }
 
     shouldBeKicked() {
-        return false
-
         let should = false
 
         DANGERS.forEach((danger) => {
@@ -74,6 +73,14 @@ class Car {
         })
 
         return should
+    }
+
+    takeHealth() {
+        this.health -= 1
+    }
+
+    isDead() {
+        return this.health <= 0
     }
 
     accelerate() {
@@ -131,7 +138,12 @@ function step(car) {
     car.updatePosition()
 
     if (car.shouldBeKicked()) {
+        car.takeHealth()
         car.position = 0
+    }
+
+    if (car.isDead()) {
+        removeCar(car.id)
     }
 }
 
@@ -153,11 +165,9 @@ function getPixels() {
     cars.forEach((car) => {
         const pos = car.getPosition()
 
-        for (let i = 0; i < 15; i++) {
+        for (let i = 0; i < car.health; i++) {
             pixels[pos + i] = car.color
         }
-
-        // pixels[pos] = car.color
     })
 
     return pixels
@@ -180,7 +190,11 @@ wss.on('connection', (ws) => {
     addCar(id, randomRgbColor())
 
     ws.on('message', () => {
-        getCar(id).accelerate()
+        const car = getCar(id)
+
+        if (car) {
+            car.accelerate()
+        }
     })
 })
 // wss.on('close', (ws) => {
