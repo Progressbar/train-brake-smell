@@ -13,12 +13,12 @@ const sendPixels = getSendPixels({
 })
 
 const DANGERS = [
-    {
-        start: 90,
-        length: 20,
-        triggerSpeed: 7,
-        color: [255, 0, 0],
-    },
+    // {
+    //     start: 90,
+    //     length: 20,
+    //     triggerSpeed: 7,
+    //     color: [255, 0, 0],
+    // },
     {
         start: 190,
         color: [255, 0, 0],
