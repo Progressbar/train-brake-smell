@@ -1,4 +1,4 @@
-const { flattenDeep } = require('lodash')
+const { flatten } = require('lodash')
 const { createOpcPacket } = require('opc-via-udp')
 const { makeRgbGradientArray, fillPixelsWithSingleColor, convertHexColorToRgbArray, clearPixels, randomRgbColor } = require('./visual-utils')
 const VUmeter = require('vu-meter')
@@ -80,79 +80,24 @@ function getVuMicPacketStream(stripLength, meter) {
     return micStream.pipe(vuMeter).pipe(micVuOpcPipe)
 }
 
-function movePixelByTouch(stripLength, screenPos, lastPixelPos) {
-    const pixels = fillPixelsWithSingleColor(stripLength, [0, 0, 0])
-}
-
-function easeIn(stripLength, client) {
-    // // const easeIn = bezier(0.42, 0, 1.0, 1.0, 1000)
-    // // const easeIn = bezier(0.455, 0, 0.515, 0.955)
-    // const easeIn = bezier(0, 0, 1, 1, 1000)
-    // for (t = 0; t <= 1; t += 0.001) {
-    //     const pixels = clearPixels(stripLength)
-    //     const timing = Math.round(easeIn(t) * 100)
-    //     const position = (stripLength / 100) * timing
-    //     console.log(position)
-    //     pixels[position] = [255, 255, 0];
-    //     const packet = createOpcPacket(stripLength, flattenDeep(pixels))
-    //     client.send(packet, 0, packet.length, 2342, 'portal3.bar')
-    // }
-}
-
-function travellingDots(stripLength, client) {
-    stripLength = stripLength/2
-
-    const bg = fillPixelsWithSingleColor(stripLength, [0, 0, 0])
-
-    function tick(bounceHeight, now) {
-        let h = 1000 //3500 // x vertex, half of total bounce duration
-        let k = bounceHeight //160 // y vertex, total bounce height
-        let a = 4 * k / Math.pow(h * 2, 2) // cached coefficient
-
-        let ypos = a * Math.pow(((now + h) % (h * 2) - h), 2)
-
-        return ypos
+function easeIn(stripLength, sendPixels) {
+    // const easeIn = bezier(0.42, 0, 1.0, 1.0, 1000)
+    // const easeIn = bezier(0.455, 0, 0.515, 0.955)
+    const easeIn = bezier(0, 0, 1, 1, 1000)
+    for (let t = 0; t <= 1; t += 0.001) {
+        const pixels = clearPixels(stripLength)
+        const timing = Math.round(easeIn(t) * 100)
+        const position = (stripLength / 100) * timing
+        console.log(position)
+        pixels[position] = [255, 255, 0];
+        sendPixels(flatten(pixels))
     }
-
-    const postMsgBar = http.request({
-        method: 'POST',
-        hostname: 'msg.bar',
-        path: '/'
-    })
-
-    let color = randomRgbColor()
-
-    setInterval(() => {
-        const pos = Math.round(tick(stripLength, Date.now()))
-        const pixels = _.cloneDeep(bg)
-
-        if ((pos + 1) >= stripLength) {
-            // console.log('Color change!')
-            color = randomRgbColor()
-        }
-
-        pixels[pos] = color
-        
-        for (let i = 1; i <= 15; i +=1) {
-            pixels[pos + i] = color
-        }
-
-        const packet = createOpcPacket(stripLength, flattenDeep([...pixels, ...pixels.reverse()]))
-        // const packet = createOpcPacket(stripLength, flattenDeep(pixels))
-        client.send(packet, 0, packet.length, 2342, 'portal3.bar')
-        // console.log(pos)
-    }, 8)
 }
 
-// function blowBall(stripLength, ballPos) {
-// }
 
 module.exports = {
     meter,
     virtualMeter,
-    // knightRider,
     getVuMicPacketStream,
-    travellingDots,
-    movePixelByTouch,
     easeIn
 }

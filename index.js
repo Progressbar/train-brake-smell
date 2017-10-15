@@ -1,34 +1,32 @@
-const { createSocket } = require('dgram')
+const { getSendPixels } = require('opc-via-udp')
 const WebSocket = require('ws')
-
+const { flatten } = require('lodash')
 const { clearPixels, fillPixelsWithSingleColor, randomRgbColor } = require('./visual/visual-utils')
-const { getVuMicPacketStream, virtualMeter, meter, easeIn, travellingDots } = require('./visual/vu')
-const { getSendPixels } = require('./utils')
+const { getVuMicPacketStream, virtualMeter, meter, easeIn } = require('./visual/vu')
 
-const CONFIG = require('./config')
-const { portal3bar } = CONFIG.portals
+const portalConfig = require('./config').portals.portal3bar
 
-const sendPixels = getSendPixels(createSocket('udp4'), portal3bar)
-
-// easeIn(STRIP_LENGTH, udpClient)
-// travellingDots(STRIP_LENGTH, udpClient)
-
-// const vuMicPacketStream = getVuMicPacketStream(portal3bar.LENGTH, virtualMeter)
-// const vuMicPacketStream = getVuMicPacketStream(portal3bar.LENGTH, meter)
-// vuMicPacketStream.on('data', sendPixels)
-
-const wss = new WebSocket.Server({ port: 8080 })
-wss.on('connection', (ws) => {
-    let lastGamma = 0
-
-    ws.on('message', (message) => {
-        const pixels = fillPixelsWithSingleColor(STRIP_LENGTH, [0, 0, 0])
-        const pixelPos = (message/100) * STRIP_LENGTH
-
-        for (let i = 0; i < 5; i++) {
-         pixels[pixelPos] = [255, 255, 255]
-        }
-        const packet = createOpcPacket(STRIP_LENGTH, flattenDeep(pixels))
-        udpClient.send(packet, 0, packet.length, 2342, 'portal3.bar')
-    })
+const sendPixels = getSendPixels({
+    port: portalConfig.PORT,
+    length: portalConfig.LENGTH,
+    host: portalConfig.HOST
 })
+
+// easeIn(portalConfig.LENGTH, sendPixels)
+
+// const vuMicPacketStream = getVuMicPacketStream(portalConfig.LENGTH, virtualMeter)
+const vuMicPacketStream = getVuMicPacketStream(portalConfig.LENGTH, meter)
+vuMicPacketStream.on('data', pixels => sendPixels(flatten(pixels)))
+
+// const wss = new WebSocket.Server({ port: 8080 })
+// wss.on('connection', (ws) => {
+//     ws.on('message', (message) => {
+//         const pixels = fillPixelsWithSingleColor(portalConfig.LENGTH, [0, 0, 0])
+//         const pixelPos = (message/100) * portalConfig.LENGTH
+//
+//         for (let i = 0; i < 5; i++) {
+//          pixels[pixelPos] = [255, 255, 255]
+//         }
+//         sendPixels(flatten(pixels))
+//     })
+// })
