@@ -14,12 +14,12 @@ const sendPixels = getSendPixels({
 })
 
 const DANGERS = [
-    // {
-    //     start: 90,
-    //     length: 20,
-    //     triggerSpeed: 7,
-    //     color: [255, 0, 0],
-    // },
+    {
+        start: 90,
+        length: 20,
+        triggerSpeed: 7,
+        color: [255, 0, 0],
+    },
     {
         start: 190,
         color: [255, 0, 0],
@@ -37,7 +37,7 @@ class Car {
         this.color = color
         this.health = 15
         this.position = 0
-        this.acceleration = 1.2
+        this.acceleration = 2
         this.speed = 0
         this.speedDecay = 0.98
         this.isBeingKilled = false
@@ -121,7 +121,7 @@ class Car {
         }
 
         if (this.speed === 0) {
-            this.speed = 0.4
+            this.speed = 0.5
         }
 
         if (this.speed > 0) {
