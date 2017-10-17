@@ -14,9 +14,13 @@
 </head>
 <body>
 <button id="accelerate">Capitalism</button>
+<b>Laps: </b><p id='laps'>0</p>
 <script>
     var wsc = new WebSocket("ws://192.168.223.149:1337")
     document.getElementById('accelerate').addEventListener('click', () => wsc.send(true))
+    wsc.onmessage = function (event) {
+        document.getElementById('laps').innerHTML = event.data
+    }
 </script>
 </body>
 </html>

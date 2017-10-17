@@ -3,6 +3,7 @@ const { getSendPixels } = require('opc-via-udp')
 const { randomRgbColor } = require('../visual/visual-utils')
 const WebSocketServer = require('ws').Server
 const portalConfig = require('../config').portals.portal3bar
+const { EventEmitter } = require('events')
 
 const TRACK_LENGTH = portalConfig.LENGTH
 const IS_PLAYING_TIMEOUT = 5000
@@ -22,21 +23,23 @@ const DANGERS = [
     },
     {
         start: 190,
-        color: [255, 0, 0],
-        triggerSpeed: 8,
         length: 20,
+        triggerSpeed: 8,
+        color: [255, 0, 0],
     }
 ]
 let cars = []
 
-class Car {
+class Car extends EventEmitter {
     constructor(props) {
+        super(props)
         const { id, color } = props
 
         this.id = id
         this.color = color
         this.health = 15
         this.position = 0
+        this.lap = 0
         this.acceleration = 2
         this.speed = 0
         this.speedDecay = 0.98
@@ -58,6 +61,8 @@ class Car {
 
         if (this.position > TRACK_LENGTH) {
             this.position = 0
+            this.lap++
+            this.emit('lap-change')
         }
 
         return this
@@ -149,7 +154,9 @@ function getCar(id) {
 }
 
 function addCar(id, color) {
-    cars.push(new Car({ id, color }))
+    const car = new Car({ id, color })
+    cars.push(car)
+    return car
 }
 
 function removeCar(id) {
@@ -220,13 +227,26 @@ const wss = new WebSocketServer({ port: 1337 })
 wss.on('connection', (ws) => {
     const id = ws._ultron.id
 
-    addCar(id, randomRgbColor())
+    const mainCar = addCar(id, randomRgbColor())
 
-    ws.on('message', () => {
+    ws.on('message', (data) => {
         const car = getCar(id)
 
         if (car) {
             car.accelerate()
         }
     })
+
+    const handleLapChange = () => {
+        const car = getCar(id)
+        if (car) {
+            ws.send(car.lap, (e) => {
+                if (e) {
+                    console.error('ERR:', e.message)
+                }
+            })
+        }
+    }
+    mainCar.on('lap-change', handleLapChange)
+
 })
