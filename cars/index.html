@@ -1,29 +1,26 @@
 <html>
 <head>
-<script src="https://ajax.googleapis.com/ajax/libs/jquery/3.2.1/jquery.min.js"></script>
+<style>
+#accelerate {
+    height: 30px;
+    width: 200px;
+    left: 50%;
+    top: 50%;
+    margin-top: -15px;
+    margin-left: -100px;
+    position: fixed;
+}
+</style>
 </head>
 <body>
+<button id="accelerate">Capitalism</button>
+<b>Laps: </b><p id='laps'>0</p>
 <script>
-    let wsc = new WebSocket("ws://192.168.223.149:1337")
-    // let wsc = new WebSocket("ws://127.0.0.1:1337")
-    let x;
-
-    function sendFrame() {
-        const stop = setInterval(() => {
-            wsc.send(true)
-        }, 5)
-        return () => {
-            clearInterval(stop)
-        }
+    var wsc = new WebSocket("ws://192.168.223.149:1337")
+    document.getElementById('accelerate').addEventListener('click', () => wsc.send(true))
+    wsc.onmessage = function (event) {
+        document.getElementById('laps').innerHTML = event.data
     }
-
-    $(window.document.body)
-        .mousedown(() => {
-            x = sendFrame()
-        })
-        .mouseup(() => {
-            x()
-        })
 </script>
 </body>
 </html>
