@@ -1,5 +1,6 @@
 <html>
 <head>
+<meta name="viewport" content="width=device-width, initial-scale=1">
 <style>
 #accelerate {
     height: 30px;
@@ -13,11 +14,11 @@
 </style>
 </head>
 <body>
-<button id="accelerate">Capitalism</button>
+<button id="accelerate">Accelerate</button>
 <b>Laps: </b><p id='laps'>0</p>
 <script>
-    var wsc = new WebSocket("ws://192.168.223.149:1337")
-    document.getElementById('accelerate').addEventListener('click', () => wsc.send(true))
+    var wsc = new WebSocket("ws://192.168.223.143:1337")
+    document.getElementById('accelerate').addEventListener('click', function () { return wsc.send(true) })
     wsc.onmessage = function (event) {
         document.getElementById('laps').innerHTML = event.data
     }

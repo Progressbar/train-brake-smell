@@ -2,16 +2,22 @@ const { flatten, isFunction } = require('lodash')
 const { getSendPixels } = require('opc-via-udp')
 const { randomRgbColor } = require('../visual/visual-utils')
 const WebSocketServer = require('ws').Server
-const portalConfig = require('../config').portals.portal3bar
+const { portal3bar, portal2bar } = require('../config').portals
 const { EventEmitter } = require('events')
 
-const TRACK_LENGTH = portalConfig.LENGTH
+const TRACK_LENGTH = portal3bar.LENGTH + portal2bar.LENGTH
 const IS_PLAYING_TIMEOUT = 5000
 
-const sendPixels = getSendPixels({
-    port: portalConfig.PORT,
-    length: portalConfig.LENGTH,
-    host: portalConfig.HOST
+const sendPortal3Pixels = getSendPixels({
+    port: portal3bar.PORT,
+    length: portal3bar.LENGTH,
+    host: portal3bar.HOST
+})
+
+const sendPortal2Pixels = getSendPixels({
+    port: portal2bar.PORT,
+    length: portal2bar.LENGTH,
+    host: portal2bar.HOST
 })
 
 const DANGERS = [
@@ -23,6 +29,24 @@ const DANGERS = [
     },
     {
         start: 190,
+        length: 20,
+        triggerSpeed: 8,
+        color: [255, 0, 0],
+    },
+    {
+        start: 390,
+        length: 20,
+        triggerSpeed: 7,
+        color: [255, 0, 0],
+    },
+    {
+        start: 440,
+        length: 20,
+        triggerSpeed: 8,
+        color: [255, 0, 0],
+    },
+    {
+        start: 490,
         length: 20,
         triggerSpeed: 8,
         color: [255, 0, 0],
@@ -220,7 +244,13 @@ function updateGame() {
 const SV_TICK_RATE = 10
 setInterval(() => {
     updateGame()
-    sendPixels(flatten(getPixels()))
+    const pixels = flatten(getPixels())
+    const middle = pixels.length / 2
+    const firstHalf = pixels.slice(0, middle)
+    const secondHalf = pixels.slice(middle, pixels.length)
+
+    sendPortal3Pixels(firstHalf)
+    sendPortal2Pixels(secondHalf)
 }, SV_TICK_RATE)
 
 const wss = new WebSocketServer({ port: 1337 })
